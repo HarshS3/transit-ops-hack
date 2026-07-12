@@ -61,9 +61,7 @@ export default function FleetPage() {
         </select>
       </div>
 
-      <div className="text-xs text-bad">
-        Note: Registration No. must be unique · Retired/In-Shop vehicles are hidden from Trip Dispatcher
-      </div>
+      
 
       <div className="card p-0 overflow-x-auto">
         <table className="tbl">

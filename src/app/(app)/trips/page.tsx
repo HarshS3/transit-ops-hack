@@ -26,10 +26,16 @@ export default function TripsPage() {
   const [msg, setMsg] = useState<string | null>(null);
 
   async function load() {
+    const safeFetch = async (url: string) => {
+      const r = await fetch(url);
+      if (!r.ok) return [];
+      const j = await r.json();
+      return Array.isArray(j) ? j : [];
+    };
     const [tR, vR, dR] = await Promise.all([
-      fetch("/api/trips").then((r) => r.json()),
-      fetch("/api/vehicles?status=AVAILABLE").then((r) => r.json()),
-      fetch("/api/drivers").then((r) => r.json()),
+      safeFetch("/api/trips"),
+      safeFetch("/api/vehicles?status=AVAILABLE"),
+      safeFetch("/api/drivers"),
     ]);
     setTrips(tR);
     setVehicles(vR);

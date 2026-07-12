@@ -49,9 +49,6 @@ export default function DriversPage() {
         <input placeholder="Search name or license…" value={q} onChange={(e) => setQ(e.target.value)} />
       </div>
 
-      <div className="text-xs text-muted">
-        Rule: Drivers with expired licenses or Suspended status are blocked from trip assignment.
-      </div>
 
       <div className="card p-0 overflow-x-auto">
         <table className="tbl">

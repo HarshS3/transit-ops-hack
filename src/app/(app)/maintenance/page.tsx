@@ -64,12 +64,6 @@ export default function MaintenancePage() {
         {err && <div className="text-bad text-sm">{err}</div>}
         <button className="btn w-full" onClick={save} disabled={!vehicleId || !service}>Save & Set In-Shop</button>
 
-        <div className="text-xs text-muted mt-2 border-t border-[#1e2a3a] pt-3">
-          <div className="mb-1 font-semibold text-text">State transitions:</div>
-          <div>Available <span className="text-brand">→ In Shop</span> (on record create)</div>
-          <div>In Shop <span className="text-ok">→ Available</span> (on close)</div>
-          <div className="mt-1">Note: In-Shop vehicles are removed from the dispatch pool.</div>
-        </div>
       </div>
 
       <div className="card">
