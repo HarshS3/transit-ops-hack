@@ -1,0 +1,133 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { StatusPill } from "@/lib/statusPill";
+
+type V = { id: string; regNo: string; name: string; type: string; capacityKg: number; odometer: number; acquisitionCost: number; region?: string | null; status: string };
+
+export default function FleetPage() {
+  const [rows, setRows] = useState<V[]>([]);
+  const [q, setQ] = useState("");
+  const [type, setType] = useState("ALL");
+  const [status, setStatus] = useState("ALL");
+  const [showAdd, setShowAdd] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const [form, setForm] = useState({ regNo: "", name: "", type: "Van", capacityKg: 500, odometer: 0, acquisitionCost: 0, region: "HQ", status: "AVAILABLE" });
+
+  async function load() {
+    const params = new URLSearchParams({ q, type, status });
+    const r = await fetch(`/api/vehicles?${params}`);
+    setRows(await r.json());
+  }
+  useEffect(() => { load(); }, [q, type, status]);
+
+  async function save() {
+    setErr(null);
+    const r = await fetch("/api/vehicles", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(form) });
+    if (!r.ok) { const j = await r.json().catch(() => ({})); setErr(j.error || "Failed"); return; }
+    setShowAdd(false);
+    setForm({ regNo: "", name: "", type: "Van", capacityKg: 500, odometer: 0, acquisitionCost: 0, region: "HQ", status: "AVAILABLE" });
+    load();
+  }
+
+  async function setStatusOf(v: V, s: string) {
+    await fetch(`/api/vehicles/${v.id}`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ status: s }) });
+    load();
+  }
+
+  return (
+    <div className="p-6 space-y-4">
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl font-semibold">Vehicle Registry</h1>
+        <button className="btn" onClick={() => setShowAdd(true)}>+ Add Vehicle</button>
+      </div>
+      <div className="flex gap-2">
+        <input placeholder="Search reg no…" value={q} onChange={(e) => setQ(e.target.value)} />
+        <select value={type} onChange={(e) => setType(e.target.value)}>
+          <option value="ALL">Type: All</option><option>Van</option><option>Truck</option><option>Mini</option>
+        </select>
+        <select value={status} onChange={(e) => setStatus(e.target.value)}>
+          <option value="ALL">Status: All</option>
+          <option value="AVAILABLE">Available</option><option value="ON_TRIP">On Trip</option>
+          <option value="IN_SHOP">In Shop</option><option value="RETIRED">Retired</option>
+        </select>
+      </div>
+
+      <div className="text-xs text-bad">
+        Note: Registration No. must be unique · Retired/In-Shop vehicles are hidden from Trip Dispatcher
+      </div>
+
+      <div className="card p-0 overflow-x-auto">
+        <table className="tbl">
+          <thead>
+            <tr><th>Reg No.</th><th>Name/Model</th><th>Type</th><th>Capacity</th><th>Odometer</th><th>Acq. Cost</th><th>Status</th><th></th></tr>
+          </thead>
+          <tbody>
+            {rows.length === 0 && <tr><td colSpan={8} className="text-muted italic p-4">No vehicles registered.</td></tr>}
+            {rows.map((v) => (
+              <tr key={v.id}>
+                <td className="font-medium">{v.regNo}</td>
+                <td>{v.name}</td>
+                <td>{v.type}</td>
+                <td>{v.capacityKg} kg</td>
+                <td>{v.odometer.toLocaleString()}</td>
+                <td>₹{v.acquisitionCost.toLocaleString()}</td>
+                <td><StatusPill status={v.status} /></td>
+                <td>
+                  <select value={v.status} onChange={(e) => setStatusOf(v, e.target.value)}>
+                    <option value="AVAILABLE">Available</option>
+                    <option value="ON_TRIP">On Trip</option>
+                    <option value="IN_SHOP">In Shop</option>
+                    <option value="RETIRED">Retired</option>
+                  </select>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {showAdd && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
+          <div className="card w-full max-w-md space-y-3">
+            <div className="flex justify-between items-center">
+              <div className="font-semibold">Register Vehicle</div>
+              <button onClick={() => setShowAdd(false)} className="text-muted">✕</button>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <F label="Reg No."><input value={form.regNo} onChange={(e) => setForm({ ...form, regNo: e.target.value })} /></F>
+              <F label="Name/Model"><input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></F>
+              <F label="Type">
+                <select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}>
+                  <option>Van</option><option>Truck</option><option>Mini</option><option>Car</option>
+                </select>
+              </F>
+              <F label="Capacity (kg)"><input type="number" value={form.capacityKg} onChange={(e) => setForm({ ...form, capacityKg: Number(e.target.value) })} /></F>
+              <F label="Odometer"><input type="number" value={form.odometer} onChange={(e) => setForm({ ...form, odometer: Number(e.target.value) })} /></F>
+              <F label="Acq. Cost"><input type="number" value={form.acquisitionCost} onChange={(e) => setForm({ ...form, acquisitionCost: Number(e.target.value) })} /></F>
+              <F label="Region">
+                <select value={form.region} onChange={(e) => setForm({ ...form, region: e.target.value })}>
+                  <option>HQ</option><option>North</option><option>South</option>
+                </select>
+              </F>
+            </div>
+            {err && <div className="text-bad text-sm">{err}</div>}
+            <div className="flex justify-end gap-2">
+              <button className="btn-ghost" onClick={() => setShowAdd(false)}>Cancel</button>
+              <button className="btn" onClick={save}>Save</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function F({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <label className="text-sm">
+      <div className="text-xs text-muted uppercase mb-1">{label}</div>
+      {children}
+    </label>
+  );
+}
