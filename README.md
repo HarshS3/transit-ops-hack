@@ -6,8 +6,9 @@ Odoo 8-hour hackathon build. Single Next.js 14 app (App Router) + Prisma + SQLit
 
 ```bash
 npm install
-node prisma/seed.mjs   # seeds users, vehicles, drivers, trips, maintenance, fuel
-npm run dev            # http://localhost:3000
+npx prisma db push                                 # syncs schema to SQLite database
+npx dotenv-cli -e .env -- node prisma/seed.mjs     # seeds users, vehicles, drivers, trips, maintenance, fuel
+npm run dev                                        # http://localhost:3000
 ```
 
 If npm install fails on Prisma engine download (corporate proxy), set

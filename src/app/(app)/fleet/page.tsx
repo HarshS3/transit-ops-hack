@@ -15,6 +15,7 @@ export default function FleetPage() {
   const [type, setType] = useState("ALL");
   const [status, setStatus] = useState("ALL");
   const [showAdd, setShowAdd] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [sort, setSort] = useState<SortState<SortKey>>({ key: "regNo", dir: "asc" });
   const [docsFor, setDocsFor] = useState<V | null>(null);
@@ -31,9 +32,12 @@ export default function FleetPage() {
 
   async function save() {
     setErr(null);
-    const r = await fetch("/api/vehicles", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(form) });
+    const method = editingId ? "PATCH" : "POST";
+    const url = editingId ? `/api/vehicles/${editingId}` : "/api/vehicles";
+    const r = await fetch(url, { method, headers: { "content-type": "application/json" }, body: JSON.stringify(form) });
     if (!r.ok) { const j = await r.json().catch(() => ({})); setErr(j.error || "Failed"); return; }
     setShowAdd(false);
+    setEditingId(null);
     setForm({ regNo: "", name: "", type: "Van", capacityKg: 500, odometer: 0, acquisitionCost: 0, region: "HQ", status: "AVAILABLE" });
     load();
   }
@@ -47,7 +51,11 @@ export default function FleetPage() {
     <div className="p-6 space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold">Vehicle Registry</h1>
-        <button className="btn" onClick={() => setShowAdd(true)}>+ Add Vehicle</button>
+        <button className="btn" onClick={() => {
+          setForm({ regNo: "", name: "", type: "Van", capacityKg: 500, odometer: 0, acquisitionCost: 0, region: "HQ", status: "AVAILABLE" });
+          setEditingId(null);
+          setShowAdd(true);
+        }}>+ Add Vehicle</button>
       </div>
       <div className="flex gap-2">
         <input placeholder="Search reg no…" value={q} onChange={(e) => setQ(e.target.value)} />
@@ -96,6 +104,16 @@ export default function FleetPage() {
                       <option value="IN_SHOP">In Shop</option>
                       <option value="RETIRED">Retired</option>
                     </select>
+                    <button className="btn-ghost !px-2 !py-1 text-xs" onClick={() => {
+                      setForm({
+                        regNo: v.regNo, name: v.name, type: v.type, capacityKg: v.capacityKg,
+                        odometer: v.odometer, acquisitionCost: v.acquisitionCost, region: v.region || "HQ", status: v.status
+                      });
+                      setEditingId(v.id);
+                      setShowAdd(true);
+                    }} title="Edit">
+                      ✏️ Edit
+                    </button>
                     <button className="btn-ghost !px-2 !py-1 text-xs" onClick={() => setDocsFor(v)} title="Documents">
                       📄 Docs
                     </button>
@@ -119,8 +137,8 @@ export default function FleetPage() {
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
           <div className="card w-full max-w-md space-y-3">
             <div className="flex justify-between items-center">
-              <div className="font-semibold">Register Vehicle</div>
-              <button onClick={() => setShowAdd(false)} className="text-muted">✕</button>
+              <div className="font-semibold">{editingId ? "Edit Vehicle" : "Register Vehicle"}</div>
+              <button onClick={() => { setShowAdd(false); setEditingId(null); }} className="text-muted">✕</button>
             </div>
             <div className="grid grid-cols-2 gap-2">
               <F label="Reg No."><input value={form.regNo} onChange={(e) => setForm({ ...form, regNo: e.target.value })} /></F>
@@ -141,7 +159,7 @@ export default function FleetPage() {
             </div>
             {err && <div className="text-bad text-sm">{err}</div>}
             <div className="flex justify-end gap-2">
-              <button className="btn-ghost" onClick={() => setShowAdd(false)}>Cancel</button>
+              <button className="btn-ghost" onClick={() => { setShowAdd(false); setEditingId(null); }}>Cancel</button>
               <button className="btn" onClick={save}>Save</button>
             </div>
           </div>

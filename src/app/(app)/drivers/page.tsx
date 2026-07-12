@@ -11,6 +11,7 @@ type SortKey = "name" | "licenseNo" | "licenseCategory" | "licenseExpiry" | "con
 export default function DriversPage() {
   const [rows, setRows] = useState<D[]>([]);
   const [showAdd, setShowAdd] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [q, setQ] = useState("");
   const [sort, setSort] = useState<SortState<SortKey>>({ key: "name", dir: "asc" });
@@ -27,9 +28,12 @@ export default function DriversPage() {
 
   async function save() {
     setErr(null);
-    const r = await fetch("/api/drivers", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(form) });
+    const method = editingId ? "PATCH" : "POST";
+    const url = editingId ? `/api/drivers/${editingId}` : "/api/drivers";
+    const r = await fetch(url, { method, headers: { "content-type": "application/json" }, body: JSON.stringify(form) });
     if (!r.ok) { const j = await r.json().catch(() => ({})); setErr(j.error || "Failed"); return; }
     setShowAdd(false);
+    setEditingId(null);
     setForm({ name: "", licenseNo: "", licenseCategory: "LMV", licenseExpiry: nextYr, contact: "", safetyScore: 90, status: "AVAILABLE" });
     load();
   }
@@ -43,7 +47,11 @@ export default function DriversPage() {
     <div className="p-6 space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold">Drivers & Safety Profiles</h1>
-        <button className="btn" onClick={() => setShowAdd(true)}>+ Add Driver</button>
+        <button className="btn" onClick={() => {
+          setForm({ name: "", licenseNo: "", licenseCategory: "LMV", licenseExpiry: nextYr, contact: "", safetyScore: 90, status: "AVAILABLE" });
+          setEditingId(null);
+          setShowAdd(true);
+        }}>+ Add Driver</button>
       </div>
       <div className="flex gap-2">
         <input placeholder="Search name or license…" value={q} onChange={(e) => setQ(e.target.value)} />
@@ -81,12 +89,25 @@ export default function DriversPage() {
                   <td>{d.safetyScore}%</td>
                   <td><StatusPill status={d.status} /></td>
                   <td>
-                    <select value={d.status} onChange={(e) => setStatusOf(d, e.target.value)}>
-                      <option value="AVAILABLE">Available</option>
-                      <option value="ON_TRIP">On Trip</option>
-                      <option value="OFF_DUTY">Off Duty</option>
-                      <option value="SUSPENDED">Suspended</option>
-                    </select>
+                    <div className="flex items-center gap-1">
+                      <select value={d.status} onChange={(e) => setStatusOf(d, e.target.value)}>
+                        <option value="AVAILABLE">Available</option>
+                        <option value="ON_TRIP">On Trip</option>
+                        <option value="OFF_DUTY">Off Duty</option>
+                        <option value="SUSPENDED">Suspended</option>
+                      </select>
+                      <button className="btn-ghost !px-2 !py-1 text-xs" onClick={() => {
+                        setForm({
+                          name: d.name, licenseNo: d.licenseNo, licenseCategory: d.licenseCategory,
+                          licenseExpiry: new Date(d.licenseExpiry).toISOString().slice(0, 10), contact: d.contact,
+                          safetyScore: d.safetyScore, status: d.status
+                        });
+                        setEditingId(d.id);
+                        setShowAdd(true);
+                      }} title="Edit">
+                        ✏️ Edit
+                      </button>
+                    </div>
                   </td>
                 </tr>
               );
@@ -99,8 +120,8 @@ export default function DriversPage() {
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
           <div className="card w-full max-w-md space-y-3">
             <div className="flex justify-between items-center">
-              <div className="font-semibold">Add Driver</div>
-              <button onClick={() => setShowAdd(false)} className="text-muted">✕</button>
+              <div className="font-semibold">{editingId ? "Edit Driver" : "Add Driver"}</div>
+              <button onClick={() => { setShowAdd(false); setEditingId(null); }} className="text-muted">✕</button>
             </div>
             <div className="grid grid-cols-2 gap-2">
               <F label="Name"><input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></F>
@@ -116,7 +137,7 @@ export default function DriversPage() {
             </div>
             {err && <div className="text-bad text-sm">{err}</div>}
             <div className="flex justify-end gap-2">
-              <button className="btn-ghost" onClick={() => setShowAdd(false)}>Cancel</button>
+              <button className="btn-ghost" onClick={() => { setShowAdd(false); setEditingId(null); }}>Cancel</button>
               <button className="btn" onClick={save}>Save</button>
             </div>
           </div>
