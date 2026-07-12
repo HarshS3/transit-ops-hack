@@ -19,7 +19,9 @@ export default function FleetPage() {
   const [err, setErr] = useState<string | null>(null);
   const [sort, setSort] = useState<SortState<SortKey>>({ key: "regNo", dir: "asc" });
   const [docsFor, setDocsFor] = useState<V | null>(null);
-  const [form, setForm] = useState({ regNo: "", name: "", type: "Van", capacityKg: 500, odometer: 0, acquisitionCost: 0, region: "HQ", status: "AVAILABLE" });
+  const [form, setForm] = useState<{
+    regNo: string; name: string; type: string; capacityKg: number | ""; odometer: number | ""; acquisitionCost: number | ""; region: string; status: string;
+  }>({ regNo: "", name: "", type: "Van", capacityKg: 500, odometer: "", acquisitionCost: "", region: "HQ", status: "AVAILABLE" });
 
   async function load() {
     const params = new URLSearchParams({ q, type, status });
@@ -34,11 +36,16 @@ export default function FleetPage() {
     setErr(null);
     const method = editingId ? "PATCH" : "POST";
     const url = editingId ? `/api/vehicles/${editingId}` : "/api/vehicles";
-    const r = await fetch(url, { method, headers: { "content-type": "application/json" }, body: JSON.stringify(form) });
+    const r = await fetch(url, { method, headers: { "content-type": "application/json" }, body: JSON.stringify({
+      ...form,
+      capacityKg: Number(form.capacityKg),
+      odometer: Number(form.odometer),
+      acquisitionCost: Number(form.acquisitionCost),
+    }) });
     if (!r.ok) { const j = await r.json().catch(() => ({})); setErr(j.error || "Failed"); return; }
     setShowAdd(false);
     setEditingId(null);
-    setForm({ regNo: "", name: "", type: "Van", capacityKg: 500, odometer: 0, acquisitionCost: 0, region: "HQ", status: "AVAILABLE" });
+    setForm({ regNo: "", name: "", type: "Van", capacityKg: 500, odometer: "", acquisitionCost: "", region: "HQ", status: "AVAILABLE" });
     load();
   }
 
@@ -52,7 +59,7 @@ export default function FleetPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold">Vehicle Registry</h1>
         <button className="btn" onClick={() => {
-          setForm({ regNo: "", name: "", type: "Van", capacityKg: 500, odometer: 0, acquisitionCost: 0, region: "HQ", status: "AVAILABLE" });
+          setForm({ regNo: "", name: "", type: "Van", capacityKg: 500, odometer: "", acquisitionCost: "", region: "HQ", status: "AVAILABLE" });
           setEditingId(null);
           setShowAdd(true);
         }}>+ Add Vehicle</button>
@@ -148,9 +155,9 @@ export default function FleetPage() {
                   <option>Van</option><option>Truck</option><option>Mini</option><option>Car</option>
                 </select>
               </F>
-              <F label="Capacity (kg)"><input type="number" value={form.capacityKg} onChange={(e) => setForm({ ...form, capacityKg: Number(e.target.value) })} /></F>
-              <F label="Odometer"><input type="number" value={form.odometer} onChange={(e) => setForm({ ...form, odometer: Number(e.target.value) })} /></F>
-              <F label="Acq. Cost"><input type="number" value={form.acquisitionCost} onChange={(e) => setForm({ ...form, acquisitionCost: Number(e.target.value) })} /></F>
+              <F label="Capacity (kg)"><input type="number" value={form.capacityKg} onChange={(e) => setForm({ ...form, capacityKg: e.target.value === "" ? "" : Number(e.target.value) })} /></F>
+              <F label="Odometer"><input type="number" value={form.odometer} onChange={(e) => setForm({ ...form, odometer: e.target.value === "" ? "" : Number(e.target.value) })} /></F>
+              <F label="Acq. Cost"><input type="number" value={form.acquisitionCost} onChange={(e) => setForm({ ...form, acquisitionCost: e.target.value === "" ? "" : Number(e.target.value) })} /></F>
               <F label="Region">
                 <select value={form.region} onChange={(e) => setForm({ ...form, region: e.target.value })}>
                   <option>HQ</option><option>North</option><option>South</option>

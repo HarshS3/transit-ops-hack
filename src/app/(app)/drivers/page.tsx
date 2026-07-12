@@ -17,7 +17,9 @@ export default function DriversPage() {
   const [sort, setSort] = useState<SortState<SortKey>>({ key: "name", dir: "asc" });
   const today = new Date().toISOString().slice(0, 10);
   const nextYr = new Date(Date.now() + 365 * 24 * 3600 * 1000).toISOString().slice(0, 10);
-  const [form, setForm] = useState({ name: "", licenseNo: "", licenseCategory: "LMV", licenseExpiry: nextYr, contact: "", safetyScore: 90, status: "AVAILABLE" });
+  const [form, setForm] = useState<{
+    name: string; licenseNo: string; licenseCategory: string; licenseExpiry: string; contact: string; safetyScore: number | ""; status: string;
+  }>({ name: "", licenseNo: "", licenseCategory: "LMV", licenseExpiry: nextYr, contact: "", safetyScore: 90, status: "AVAILABLE" });
 
   async function load() {
     const params = new URLSearchParams({ q });
@@ -30,7 +32,7 @@ export default function DriversPage() {
     setErr(null);
     const method = editingId ? "PATCH" : "POST";
     const url = editingId ? `/api/drivers/${editingId}` : "/api/drivers";
-    const r = await fetch(url, { method, headers: { "content-type": "application/json" }, body: JSON.stringify(form) });
+    const r = await fetch(url, { method, headers: { "content-type": "application/json" }, body: JSON.stringify({ ...form, safetyScore: Number(form.safetyScore) }) });
     if (!r.ok) { const j = await r.json().catch(() => ({})); setErr(j.error || "Failed"); return; }
     setShowAdd(false);
     setEditingId(null);
@@ -133,7 +135,7 @@ export default function DriversPage() {
               </F>
               <F label="License Expiry"><input type="date" value={form.licenseExpiry} onChange={(e) => setForm({ ...form, licenseExpiry: e.target.value })} /></F>
               <F label="Contact"><input value={form.contact} onChange={(e) => setForm({ ...form, contact: e.target.value })} /></F>
-              <F label="Safety Score"><input type="number" value={form.safetyScore} onChange={(e) => setForm({ ...form, safetyScore: Number(e.target.value) })} /></F>
+              <F label="Safety Score"><input type="number" value={form.safetyScore} onChange={(e) => setForm({ ...form, safetyScore: e.target.value === "" ? "" : Number(e.target.value) })} /></F>
             </div>
             {err && <div className="text-bad text-sm">{err}</div>}
             <div className="flex justify-end gap-2">

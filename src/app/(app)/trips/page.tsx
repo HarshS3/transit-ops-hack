@@ -19,9 +19,9 @@ export default function TripsPage() {
   const [destination, setDestination] = useState("");
   const [vehicleId, setVehicleId] = useState("");
   const [driverId, setDriverId] = useState("");
-  const [cargoKg, setCargoKg] = useState(0);
-  const [plannedKm, setPlannedKm] = useState(0);
-  const [revenue, setRevenue] = useState(0);
+  const [cargoKg, setCargoKg] = useState<number | "">("");
+  const [plannedKm, setPlannedKm] = useState<number | "">("");
+  const [revenue, setRevenue] = useState<number | "">("");
   const [err, setErr] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
 
@@ -46,10 +46,10 @@ export default function TripsPage() {
   const selectedV = vehicles.find((v) => v.id === vehicleId);
   const selectedD = drivers.find((d) => d.id === driverId);
   const driverExpired = selectedD ? new Date(selectedD.licenseExpiry) < new Date() : false;
-  const capacityExceeded = selectedV ? cargoKg > selectedV.capacityKg : false;
+  const capacityExceeded = selectedV ? Number(cargoKg) > selectedV.capacityKg : false;
   const canDispatch =
     !!source && !!destination && !!selectedV && !!selectedD &&
-    cargoKg > 0 && plannedKm > 0 &&
+    Number(cargoKg) > 0 && Number(plannedKm) > 0 &&
     selectedD.status === "AVAILABLE" && !driverExpired && !capacityExceeded;
 
   async function create() {
@@ -62,7 +62,7 @@ export default function TripsPage() {
     if (!r.ok) { const j = await r.json(); setErr(j.error); return; }
     const trip = await r.json();
     setMsg(`Draft ${trip.code} created`);
-    setSource(""); setDestination(""); setVehicleId(""); setDriverId(""); setCargoKg(0); setPlannedKm(0); setRevenue(0);
+    setSource(""); setDestination(""); setVehicleId(""); setDriverId(""); setCargoKg(""); setPlannedKm(""); setRevenue("");
     load();
   }
 
@@ -114,13 +114,13 @@ export default function TripsPage() {
             </select>
           </F>
           <F label="Cargo Weight (kg)">
-            <input type="number" value={cargoKg} onChange={(e) => setCargoKg(Number(e.target.value))} />
+            <input type="number" value={cargoKg} onChange={(e) => setCargoKg(e.target.value === "" ? "" : Number(e.target.value))} />
           </F>
           <F label="Planned Distance (km)">
-            <input type="number" value={plannedKm} onChange={(e) => setPlannedKm(Number(e.target.value))} />
+            <input type="number" value={plannedKm} onChange={(e) => setPlannedKm(e.target.value === "" ? "" : Number(e.target.value))} />
           </F>
           <F label="Expected Revenue">
-            <input type="number" value={revenue} onChange={(e) => setRevenue(Number(e.target.value))} />
+            <input type="number" value={revenue} onChange={(e) => setRevenue(e.target.value === "" ? "" : Number(e.target.value))} />
           </F>
         </div>
 
@@ -140,7 +140,7 @@ export default function TripsPage() {
         {msg && <div className="text-sm text-ok">{msg}</div>}
 
         <div className="flex gap-2 justify-end">
-          <button className="btn-ghost" onClick={() => { setSource(""); setDestination(""); setVehicleId(""); setDriverId(""); setCargoKg(0); setPlannedKm(0); }}>Cancel</button>
+          <button className="btn-ghost" onClick={() => { setSource(""); setDestination(""); setVehicleId(""); setDriverId(""); setCargoKg(""); setPlannedKm(""); }}>Cancel</button>
           <button className="btn" onClick={create} disabled={!canDispatch}>Create Draft</button>
         </div>
       </div>
@@ -160,8 +160,8 @@ export default function TripsPage() {
 }
 
 function TripRow({ t, onAction }: { t: Trip; onAction: (id: string, action: string, extra?: any) => void }) {
-  const [actualKm, setActualKm] = useState(t.plannedKm);
-  const [fuel, setFuel] = useState(0);
+  const [actualKm, setActualKm] = useState<number | "">(t.plannedKm);
+  const [fuel, setFuel] = useState<number | "">("");
 
   return (
     <div className="border border-[#1e2a3a] rounded-lg p-3">
@@ -186,14 +186,14 @@ function TripRow({ t, onAction }: { t: Trip; onAction: (id: string, action: stri
         <div className="mt-2 grid grid-cols-3 gap-2 items-end">
           <label className="text-xs">
             <div className="text-muted mb-1">Actual km</div>
-            <input type="number" value={actualKm} onChange={(e) => setActualKm(Number(e.target.value))} />
+            <input type="number" value={actualKm} onChange={(e) => setActualKm(e.target.value === "" ? "" : Number(e.target.value))} />
           </label>
           <label className="text-xs">
             <div className="text-muted mb-1">Fuel used (L)</div>
-            <input type="number" value={fuel} onChange={(e) => setFuel(Number(e.target.value))} />
+            <input type="number" value={fuel} onChange={(e) => setFuel(e.target.value === "" ? "" : Number(e.target.value))} />
           </label>
           <div className="flex gap-2">
-            <button className="btn" onClick={() => onAction(t.id, "complete", { actualKm, fuelUsedL: fuel })}>Complete</button>
+            <button className="btn" onClick={() => onAction(t.id, "complete", { actualKm: Number(actualKm), fuelUsedL: Number(fuel) })}>Complete</button>
             <button className="btn-ghost" onClick={() => onAction(t.id, "cancel")}>Cancel</button>
           </div>
         </div>

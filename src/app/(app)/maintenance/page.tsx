@@ -11,7 +11,7 @@ export default function MaintenancePage() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [vehicleId, setVehicleId] = useState("");
   const [service, setService] = useState("");
-  const [cost, setCost] = useState(0);
+  const [cost, setCost] = useState<number | "">("");
   const [err, setErr] = useState<string | null>(null);
 
   async function load() {
@@ -29,10 +29,10 @@ export default function MaintenancePage() {
     const r = await fetch("/api/maintenance", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ vehicleId, service, cost }),
+      body: JSON.stringify({ vehicleId, service, cost: Number(cost) }),
     });
     if (!r.ok) { const j = await r.json(); setErr(j.error); return; }
-    setService(""); setCost(0);
+    setVehicleId(""); setService(""); setCost("");
     load();
   }
 
@@ -60,7 +60,7 @@ export default function MaintenancePage() {
           </select>
         </F>
         <F label="Service Type"><input value={service} onChange={(e) => setService(e.target.value)} placeholder="Oil Change" /></F>
-        <F label="Cost"><input type="number" value={cost} onChange={(e) => setCost(Number(e.target.value))} /></F>
+        <F label="Cost"><input type="number" value={cost} onChange={(e) => setCost(e.target.value === "" ? "" : Number(e.target.value))} /></F>
         {err && <div className="text-bad text-sm">{err}</div>}
         <button className="btn w-full" onClick={save} disabled={!vehicleId || !service}>Save & Set In-Shop</button>
 
