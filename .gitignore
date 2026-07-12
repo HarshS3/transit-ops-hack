@@ -1,0 +1,49 @@
+# dependencies
+node_modules
+.pnp
+.pnp.js
+
+# next.js
+.next
+out
+build
+dist
+
+# env & secrets
+.env
+.env.local
+.env.*.local
+
+# database (SQLite)
+*.db
+*.db-journal
+*.sqlite
+*.sqlite-journal
+prisma/*.db
+prisma/*.db-journal
+prisma/migrations/dev/
+
+# uploaded files
+storage/
+
+# logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# testing / coverage
+coverage
+.nyc_output
+
+# editor / OS
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+.idea
+.DS_Store
+Thumbs.db
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
