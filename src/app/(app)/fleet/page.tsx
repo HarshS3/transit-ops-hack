@@ -2,8 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { StatusPill } from "@/lib/statusPill";
+import { SortableHeader, useSortedRows, SortState } from "@/components/SortableHeader";
+import DocumentsModal from "@/components/DocumentsModal";
 
 type V = { id: string; regNo: string; name: string; type: string; capacityKg: number; odometer: number; acquisitionCost: number; region?: string | null; status: string };
+
+type SortKey = "regNo" | "name" | "type" | "capacityKg" | "odometer" | "acquisitionCost" | "status";
 
 export default function FleetPage() {
   const [rows, setRows] = useState<V[]>([]);
@@ -12,6 +16,8 @@ export default function FleetPage() {
   const [status, setStatus] = useState("ALL");
   const [showAdd, setShowAdd] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [sort, setSort] = useState<SortState<SortKey>>({ key: "regNo", dir: "asc" });
+  const [docsFor, setDocsFor] = useState<V | null>(null);
   const [form, setForm] = useState({ regNo: "", name: "", type: "Van", capacityKg: 500, odometer: 0, acquisitionCost: 0, region: "HQ", status: "AVAILABLE" });
 
   async function load() {
@@ -20,6 +26,8 @@ export default function FleetPage() {
     setRows(await r.json());
   }
   useEffect(() => { load(); }, [q, type, status]);
+
+  const sorted = useSortedRows(rows, sort);
 
   async function save() {
     setErr(null);
@@ -60,11 +68,20 @@ export default function FleetPage() {
       <div className="card p-0 overflow-x-auto">
         <table className="tbl">
           <thead>
-            <tr><th>Reg No.</th><th>Name/Model</th><th>Type</th><th>Capacity</th><th>Odometer</th><th>Acq. Cost</th><th>Status</th><th></th></tr>
+            <tr>
+              <SortableHeader label="Reg No." colKey="regNo" sort={sort} setSort={setSort} />
+              <SortableHeader label="Name/Model" colKey="name" sort={sort} setSort={setSort} />
+              <SortableHeader label="Type" colKey="type" sort={sort} setSort={setSort} />
+              <SortableHeader label="Capacity" colKey="capacityKg" sort={sort} setSort={setSort} />
+              <SortableHeader label="Odometer" colKey="odometer" sort={sort} setSort={setSort} />
+              <SortableHeader label="Acq. Cost" colKey="acquisitionCost" sort={sort} setSort={setSort} />
+              <SortableHeader label="Status" colKey="status" sort={sort} setSort={setSort} />
+              <th></th>
+            </tr>
           </thead>
           <tbody>
             {rows.length === 0 && <tr><td colSpan={8} className="text-muted italic p-4">No vehicles registered.</td></tr>}
-            {rows.map((v) => (
+            {sorted.map((v) => (
               <tr key={v.id}>
                 <td className="font-medium">{v.regNo}</td>
                 <td>{v.name}</td>
@@ -74,18 +91,31 @@ export default function FleetPage() {
                 <td>₹{v.acquisitionCost.toLocaleString()}</td>
                 <td><StatusPill status={v.status} /></td>
                 <td>
-                  <select value={v.status} onChange={(e) => setStatusOf(v, e.target.value)}>
-                    <option value="AVAILABLE">Available</option>
-                    <option value="ON_TRIP">On Trip</option>
-                    <option value="IN_SHOP">In Shop</option>
-                    <option value="RETIRED">Retired</option>
-                  </select>
+                  <div className="flex items-center gap-1">
+                    <select value={v.status} onChange={(e) => setStatusOf(v, e.target.value)}>
+                      <option value="AVAILABLE">Available</option>
+                      <option value="ON_TRIP">On Trip</option>
+                      <option value="IN_SHOP">In Shop</option>
+                      <option value="RETIRED">Retired</option>
+                    </select>
+                    <button className="btn-ghost !px-2 !py-1 text-xs" onClick={() => setDocsFor(v)} title="Documents">
+                      📄 Docs
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+
+      {docsFor && (
+        <DocumentsModal
+          vehicleId={docsFor.id}
+          vehicleRegNo={docsFor.regNo}
+          onClose={() => setDocsFor(null)}
+        />
+      )}
 
       {showAdd && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">

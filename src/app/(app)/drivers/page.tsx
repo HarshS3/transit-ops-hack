@@ -2,14 +2,18 @@
 
 import { useEffect, useState } from "react";
 import { StatusPill } from "@/lib/statusPill";
+import { SortableHeader, useSortedRows, SortState } from "@/components/SortableHeader";
 
 type D = { id: string; name: string; licenseNo: string; licenseCategory: string; licenseExpiry: string; contact: string; safetyScore: number; status: string };
+
+type SortKey = "name" | "licenseNo" | "licenseCategory" | "licenseExpiry" | "contact" | "safetyScore" | "status";
 
 export default function DriversPage() {
   const [rows, setRows] = useState<D[]>([]);
   const [showAdd, setShowAdd] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [q, setQ] = useState("");
+  const [sort, setSort] = useState<SortState<SortKey>>({ key: "name", dir: "asc" });
   const today = new Date().toISOString().slice(0, 10);
   const nextYr = new Date(Date.now() + 365 * 24 * 3600 * 1000).toISOString().slice(0, 10);
   const [form, setForm] = useState({ name: "", licenseNo: "", licenseCategory: "LMV", licenseExpiry: nextYr, contact: "", safetyScore: 90, status: "AVAILABLE" });
@@ -52,11 +56,20 @@ export default function DriversPage() {
       <div className="card p-0 overflow-x-auto">
         <table className="tbl">
           <thead>
-            <tr><th>Driver</th><th>License No.</th><th>Category</th><th>Expiry</th><th>Contact</th><th>Safety</th><th>Status</th><th></th></tr>
+            <tr>
+              <SortableHeader label="Driver" colKey="name" sort={sort} setSort={setSort} />
+              <SortableHeader label="License No." colKey="licenseNo" sort={sort} setSort={setSort} />
+              <SortableHeader label="Category" colKey="licenseCategory" sort={sort} setSort={setSort} />
+              <SortableHeader label="Expiry" colKey="licenseExpiry" sort={sort} setSort={setSort} />
+              <SortableHeader label="Contact" colKey="contact" sort={sort} setSort={setSort} />
+              <SortableHeader label="Safety" colKey="safetyScore" sort={sort} setSort={setSort} />
+              <SortableHeader label="Status" colKey="status" sort={sort} setSort={setSort} />
+              <th></th>
+            </tr>
           </thead>
           <tbody>
             {rows.length === 0 && <tr><td colSpan={8} className="text-muted italic p-4">No drivers.</td></tr>}
-            {rows.map((d) => {
+            {useSortedRows(rows, sort).map((d) => {
               const expired = new Date(d.licenseExpiry) < new Date();
               return (
                 <tr key={d.id}>
